@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Eurostat extraction payload",
+  "type": "object",
+  "required": ["records"],
+  "properties": {
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source", "dataset", "country_code", "year", "month"],
+        "properties": {
+          "source": { "type": "string", "const": "eurostat" },
+          "dataset": { "type": "string", "enum": ["nama_10_pc", "une_rt_m", "prc_hicp_manr", "demo_pjan"] },
+          "description": { "type": "string" },
+          "country_code": { "type": "string", "pattern": "^[A-Z]{2}(_[A-Z0-9]+)?$" },
+          "year": { "type": "integer", "minimum": 1990, "maximum": 2100 },
+          "month": { "type": "integer", "minimum": 1, "maximum": 12 },
+          "value": { "type": ["number", "null"] },
+          "unit": { "type": ["string", "null"] }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}
