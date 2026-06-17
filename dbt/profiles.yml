@@ -1,0 +1,16 @@
+dataflow_eu:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "/tmp/dataflow_eu_dev.duckdb"
+      threads: 4
+    prod:
+      type: postgres
+      host: "{{ env_var('POSTGRES_HOST', 'localhost') }}"
+      port: 5432
+      dbname: "{{ env_var('POSTGRES_DB', 'dataflow') }}"
+      user: "{{ env_var('POSTGRES_USER', 'dataflow') }}"
+      password: "{{ env_var('POSTGRES_PASSWORD', 'dataflow') }}"
+      schema: public
+      threads: 4

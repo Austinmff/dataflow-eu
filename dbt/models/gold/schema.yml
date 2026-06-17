@@ -1,0 +1,22 @@
+version: 2
+models:
+  - name: gold_eu_indicators
+    columns:
+      - name: country_code
+        tests: [not_null]
+      - name: year
+        tests: [not_null]
+      - name: month
+        tests: [not_null]
+  - name: gold_eu_time_series
+    columns:
+      - name: indicator
+        tests: [not_null]
+      - name: country_code
+        tests: [not_null]
+      - name: value
+        tests: [not_null]
+  - name: gold_country_comparison
+    columns:
+      - name: country_code
+        tests: [not_null, unique]
