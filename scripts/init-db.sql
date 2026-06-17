@@ -1,0 +1,11 @@
+CREATE DATABASE airflow;
+CREATE USER airflow WITH PASSWORD 'airflow';
+GRANT ALL PRIVILEGES ON DATABASE airflow TO airflow;
+
+\c dataflow;
+CREATE SCHEMA IF NOT EXISTS bronze;
+CREATE SCHEMA IF NOT EXISTS silver;
+CREATE SCHEMA IF NOT EXISTS gold;
+GRANT ALL ON SCHEMA bronze TO dataflow;
+GRANT ALL ON SCHEMA silver TO dataflow;
+GRANT ALL ON SCHEMA gold TO dataflow;
