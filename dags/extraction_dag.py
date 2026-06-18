@@ -22,7 +22,6 @@ import os
 from datetime import datetime, timedelta
 
 from airflow.decorators import dag, task
-from airflow.operators.empty import EmptyOperator
 
 default_args = {
     "owner": "dataflow-eu",
@@ -72,7 +71,6 @@ def _slack_alert(context: dict) -> None:
     tags=["bronze", "extraction", "eurostat", "ecb"],
 )
 def extraction_pipeline():
-
     @task(task_id="extract_eurostat")
     def extract_eurostat(logical_date=None, **context) -> dict:
         """
@@ -139,6 +137,7 @@ def extraction_pipeline():
     def summarize_extraction(eurostat_result: dict, ecb_result: dict) -> None:
         """Log a summary of the extraction run for observability."""
         import structlog
+
         log = structlog.get_logger("extraction_pipeline")
         log.info(
             "extraction_summary",

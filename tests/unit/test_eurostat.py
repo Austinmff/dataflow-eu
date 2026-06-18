@@ -8,9 +8,7 @@ Uses responses/pytest-mock to mock the Eurostat HTTP API.
 from __future__ import annotations
 
 import json
-import os
-from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import boto3
 import pytest
@@ -74,8 +72,8 @@ def s3_bucket():
 # Tests
 # ---------------------------------------------------------------------------
 
-class TestEurostatExtractorParsing:
 
+class TestEurostatExtractorParsing:
     def test_parse_response_returns_flat_records(self):
         from extractors.eurostat import EurostatExtractor
 
@@ -110,9 +108,7 @@ class TestEurostatExtractorParsing:
         extractor = EurostatExtractor()
         meta = {"description": "GDP per capita", "unit": "CP_EUR_HAB"}
         empty_response = {**FAKE_EUROSTAT_RESPONSE, "value": {}}
-        records = extractor._parse_response(
-            empty_response, "nama_10_pc", meta, year=2023, month=1
-        )
+        records = extractor._parse_response(empty_response, "nama_10_pc", meta, year=2023, month=1)
         assert records == []
 
     def test_skip_annual_dataset_for_non_january(self):
@@ -131,7 +127,6 @@ class TestEurostatExtractorParsing:
 
 
 class TestEurostatExtractorS3:
-
     def test_s3_key_format(self):
         from extractors.eurostat import EurostatExtractor
 
@@ -145,9 +140,18 @@ class TestEurostatExtractorS3:
         extractor = EurostatExtractor()
         extractor._s3_client = s3_bucket  # inject mocked client
 
-        records = [{"source": "eurostat", "dataset": "une_rt_m", "country_code": "PT",
-                    "year": 2023, "month": 3, "value": 6.5, "unit": "PC_ACT",
-                    "description": "Unemployment rate"}]
+        records = [
+            {
+                "source": "eurostat",
+                "dataset": "une_rt_m",
+                "country_code": "PT",
+                "year": 2023,
+                "month": 3,
+                "value": 6.5,
+                "unit": "PC_ACT",
+                "description": "Unemployment rate",
+            }
+        ]
 
         key = extractor._upload(records, year=2023, month=3)
 
@@ -172,16 +176,24 @@ class TestEurostatExtractorS3:
         extractor = EurostatExtractor()
         extractor._s3_client = s3_bucket
 
-        records = [{"source": "eurostat", "dataset": "une_rt_m", "country_code": "PT",
-                    "year": 2023, "month": 3, "value": 6.5, "unit": "PC_ACT",
-                    "description": "Unemployment rate"}]
+        records = [
+            {
+                "source": "eurostat",
+                "dataset": "une_rt_m",
+                "country_code": "PT",
+                "year": 2023,
+                "month": 3,
+                "value": 6.5,
+                "unit": "PC_ACT",
+                "description": "Unemployment rate",
+            }
+        ]
         extractor._upload(records, year=2023, month=3)
 
         assert extractor.key_exists(year=2023, month=3) is True
 
 
 class TestEurostatExtractorRetry:
-
     def test_raises_extraction_error_after_retries(self, monkeypatch):
         from extractors.eurostat import EurostatExtractor, ExtractionError
 
@@ -193,7 +205,6 @@ class TestEurostatExtractorRetry:
 
 
 class TestEurostatSchemaValidation:
-
     def test_valid_records_pass_validation(self):
         from extractors.eurostat import EurostatExtractor
 

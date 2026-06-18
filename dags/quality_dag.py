@@ -32,6 +32,7 @@ def _slack_alert(context: dict) -> None:
     if not webhook_url:
         return
     import requests
+
     ti = context["task_instance"]
     requests.post(
         webhook_url,
@@ -51,13 +52,16 @@ def _slack_alert(context: dict) -> None:
 def _run_quality_checks(layer: str) -> dict:
     """Run the GE runner script for a given layer and parse the result."""
     import subprocess
+
     import structlog
 
     log = structlog.get_logger("quality_pipeline")
 
     cmd = [
-        "python", "/opt/airflow/scripts/run_quality_checks.py",
-        "--layer", layer,
+        "python",
+        "/opt/airflow/scripts/run_quality_checks.py",
+        "--layer",
+        layer,
     ]
 
     log.info("quality_check_started", layer=layer)
@@ -71,9 +75,7 @@ def _run_quality_checks(layer: str) -> dict:
     )
 
     if result.returncode != 0:
-        raise RuntimeError(
-            f"Quality checks failed for layer={layer}:\n{result.stdout[-2000:]}"
-        )
+        raise RuntimeError(f"Quality checks failed for layer={layer}:\n{result.stdout[-2000:]}")
 
     return {"layer": layer, "status": "passed"}
 
@@ -90,7 +92,6 @@ def _run_quality_checks(layer: str) -> dict:
     tags=["quality", "great-expectations"],
 )
 def quality_pipeline():
-
     wait_for_transformation = ExternalTaskSensor(
         task_id="wait_for_transformation",
         external_dag_id="transformation_pipeline",
@@ -124,6 +125,7 @@ def quality_pipeline():
         or a static site host.
         """
         import structlog
+
         structlog.get_logger("quality_pipeline").info(
             "data_docs_published",
             bronze=bronze,

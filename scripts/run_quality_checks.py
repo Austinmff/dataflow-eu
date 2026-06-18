@@ -109,18 +109,22 @@ def run_suite(context: gx.DataContext, suite_path: Path, engine) -> SuiteResult:
             if result.success:
                 successful_count += 1
             else:
-                failed_expectations.append({
-                    "expectation_type": exp_type,
-                    "kwargs": kwargs,
-                    "result": result.result,
-                })
+                failed_expectations.append(
+                    {
+                        "expectation_type": exp_type,
+                        "kwargs": kwargs,
+                        "result": result.result,
+                    }
+                )
                 log.warning("expectation_failed", expectation_type=exp_type, kwargs=kwargs)
         except Exception as exc:
-            failed_expectations.append({
-                "expectation_type": exp_type,
-                "kwargs": kwargs,
-                "error": str(exc),
-            })
+            failed_expectations.append(
+                {
+                    "expectation_type": exp_type,
+                    "kwargs": kwargs,
+                    "error": str(exc),
+                }
+            )
             log.error("expectation_errored", expectation_type=exp_type, error=str(exc))
 
     total = len(suite_def["expectations"])
@@ -212,7 +216,9 @@ def generate_html_report(results: list[SuiteResult]) -> Path:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run Great Expectations suites for DataFlow EU")
     parser.add_argument("--layer", choices=["bronze", "silver", "gold"], help="Run only one layer")
-    parser.add_argument("--fail-fast", action="store_true", help="Exit immediately on first failure")
+    parser.add_argument(
+        "--fail-fast", action="store_true", help="Exit immediately on first failure"
+    )
     args = parser.parse_args()
 
     suite_files = load_suite_files(layer=args.layer)

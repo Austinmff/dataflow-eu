@@ -1,6 +1,8 @@
 from __future__ import annotations
+
 import os
 from datetime import datetime, timedelta
+
 from airflow.decorators import dag, task
 from airflow.sensors.external_task import ExternalTaskSensor
 
@@ -11,10 +13,23 @@ default_args = {
     "email_on_failure": False,
 }
 
+
 def _run_dbt(command: str, select: str | None = None) -> dict:
-    import subprocess, structlog
+    import subprocess
+
+    import structlog
+
     log = structlog.get_logger("transformation_pipeline")
-    cmd = ["dbt", command, "--project-dir", "/opt/airflow/dbt", "--profiles-dir", "/opt/airflow/dbt", "--target", os.environ.get("DBT_TARGET", "prod")]
+    cmd = [
+        "dbt",
+        command,
+        "--project-dir",
+        "/opt/airflow/dbt",
+        "--profiles-dir",
+        "/opt/airflow/dbt",
+        "--target",
+        os.environ.get("DBT_TARGET", "prod"),
+    ]
     if select:
         cmd += ["--select", select]
     log.info("dbt_command_started", command=command, select=select)
@@ -23,6 +38,7 @@ def _run_dbt(command: str, select: str | None = None) -> dict:
         raise RuntimeError(f"dbt {command} failed:\n{result.stdout[-2000:]}")
     log.info("dbt_command_succeeded", command=command, select=select)
     return {"command": command, "select": select, "status": "success"}
+
 
 @dag(
     dag_id="transformation_pipeline",
@@ -35,7 +51,6 @@ def _run_dbt(command: str, select: str | None = None) -> dict:
     tags=["silver", "gold", "dbt", "transformation"],
 )
 def transformation_pipeline():
-
     wait_for_extraction = ExternalTaskSensor(
         task_id="wait_for_extraction",
         external_dag_id="extraction_pipeline",
@@ -67,7 +82,10 @@ def transformation_pipeline():
     @task(task_id="summarize_transformation")
     def summarize_transformation(bronze: dict, silver: dict, gold: dict, tests: dict) -> None:
         import structlog
-        structlog.get_logger("transformation_pipeline").info("transformation_summary", bronze=bronze, silver=silver, gold=gold, tests=tests)
+
+        structlog.get_logger("transformation_pipeline").info(
+            "transformation_summary", bronze=bronze, silver=silver, gold=gold, tests=tests
+        )
 
     bronze = dbt_run_bronze()
     silver = dbt_run_silver()
@@ -75,5 +93,6 @@ def transformation_pipeline():
     tests = dbt_test_all()
     summary = summarize_transformation(bronze, silver, gold, tests)
     wait_for_extraction >> bronze >> silver >> gold >> tests >> summary
+
 
 transformation_pipeline()

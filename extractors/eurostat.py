@@ -25,9 +25,34 @@ logger = structlog.get_logger(__name__)
 
 # EU-27 + candidate countries of interest
 TARGET_COUNTRIES = [
-    "AT", "BE", "BG", "CY", "CZ", "DE", "DK", "EE", "EL", "ES",
-    "FI", "FR", "HR", "HU", "IE", "IT", "LT", "LU", "LV", "MT",
-    "NL", "PL", "PT", "RO", "SE", "SI", "SK", "EU27_2020",
+    "AT",
+    "BE",
+    "BG",
+    "CY",
+    "CZ",
+    "DE",
+    "DK",
+    "EE",
+    "EL",
+    "ES",
+    "FI",
+    "FR",
+    "HR",
+    "HU",
+    "IE",
+    "IT",
+    "LT",
+    "LU",
+    "LV",
+    "MT",
+    "NL",
+    "PL",
+    "PT",
+    "RO",
+    "SE",
+    "SI",
+    "SK",
+    "EU27_2020",
 ]
 
 DATASETS = {
@@ -38,14 +63,14 @@ DATASETS = {
     },
     "une_rt_m": {
         "description": "Unemployment rate",
-        "unit": "PC_ACT",    # percentage of active population
-        "sex": "T",           # total
+        "unit": "PC_ACT",  # percentage of active population
+        "sex": "T",  # total
         "age": "TOTAL",
     },
     "prc_hicp_manr": {
         "description": "HICP inflation rate",
-        "unit": "RCH_A",     # annual rate of change
-        "coicop": "CP00",    # all items
+        "unit": "RCH_A",  # annual rate of change
+        "coicop": "CP00",  # all items
     },
     "demo_pjan": {
         "description": "Population on 1 January",
@@ -167,7 +192,9 @@ class EurostatExtractor(BaseExtractor):
         try:
             value_map: dict[str, float | None] = raw.get("value", {})
             dimensions = raw.get("dimension", {})
-            geo_index: dict[str, int] = dimensions.get("geo", {}).get("category", {}).get("index", {})
+            geo_index: dict[str, int] = (
+                dimensions.get("geo", {}).get("category", {}).get("index", {})
+            )
         except (KeyError, AttributeError) as exc:
             raise ExtractionError(
                 f"Unexpected Eurostat response structure for {dataset_code}"
@@ -182,15 +209,17 @@ class EurostatExtractor(BaseExtractor):
             if country_code is None:
                 continue
 
-            records.append({
-                "source": "eurostat",
-                "dataset": dataset_code,
-                "description": meta["description"],
-                "country_code": country_code,
-                "year": year,
-                "month": month,
-                "value": value,
-                "unit": meta.get("unit"),
-            })
+            records.append(
+                {
+                    "source": "eurostat",
+                    "dataset": dataset_code,
+                    "description": meta["description"],
+                    "country_code": country_code,
+                    "year": year,
+                    "month": month,
+                    "value": value,
+                    "unit": meta.get("unit"),
+                }
+            )
 
         return records

@@ -187,9 +187,7 @@ class BaseExtractor(ABC):
                 ContentType="application/json",
             )
         except ClientError as exc:
-            raise ExtractionError(
-                f"[{self.source_name}] S3 upload failed for key {key}"
-            ) from exc
+            raise ExtractionError(f"[{self.source_name}] S3 upload failed for key {key}") from exc
 
         return key
 

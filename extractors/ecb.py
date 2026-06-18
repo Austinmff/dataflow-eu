@@ -57,9 +57,11 @@ class ECBExtractor(BaseExtractor):
             "https://data-api.ecb.europa.eu/service",
         )
         self.session = requests.Session()
-        self.session.headers.update({
-            "Accept": "application/vnd.sdmx.data+json;version=1.0.0-wd",
-        })
+        self.session.headers.update(
+            {
+                "Accept": "application/vnd.sdmx.data+json;version=1.0.0-wd",
+            }
+        )
 
     # ------------------------------------------------------------------
     # BaseExtractor interface
@@ -107,9 +109,7 @@ class ECBExtractor(BaseExtractor):
                 # Series may not have data for this period — not an error
                 logger.warning("ecb_series_no_data", series=series_key, period=period)
                 return {}
-            raise ExtractionError(
-                f"ECB API HTTP {response.status_code} for {series_key}"
-            ) from exc
+            raise ExtractionError(f"ECB API HTTP {response.status_code} for {series_key}") from exc
 
         return response.json()
 
@@ -150,9 +150,7 @@ class ECBExtractor(BaseExtractor):
                 .get("values", [])
             )
         except (KeyError, IndexError, StopIteration) as exc:
-            raise ExtractionError(
-                f"Unexpected ECB response structure for {series_key}"
-            ) from exc
+            raise ExtractionError(f"Unexpected ECB response structure for {series_key}") from exc
 
         # Map time dimension index → period label
         idx_to_period = {str(i): v.get("id", "") for i, v in enumerate(time_periods)}
@@ -161,15 +159,17 @@ class ECBExtractor(BaseExtractor):
             period_label = idx_to_period.get(obs_idx)
             value = obs_values[0] if obs_values else None
 
-            records.append({
-                "source": "ecb",
-                "series_key": series_key,
-                "description": meta["description"],
-                "period": period_label,
-                "year": year,
-                "month": month,
-                "value": value,
-                "unit": meta["unit"],
-            })
+            records.append(
+                {
+                    "source": "ecb",
+                    "series_key": series_key,
+                    "description": meta["description"],
+                    "period": period_label,
+                    "year": year,
+                    "month": month,
+                    "value": value,
+                    "unit": meta["unit"],
+                }
+            )
 
         return records
