@@ -1,0 +1,29 @@
+{
+  "suite_name": "gold_country_comparison_suite",
+  "description": "Validates the Gold ranking table — one row per country, must be unique and ranks must be contiguous.",
+  "table": "gold.gold_country_comparison",
+  "expectations": [
+    {
+      "expectation_type": "expect_column_values_to_be_unique",
+      "kwargs": { "column": "country_code" }
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": { "column": "gdp_rank" }
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": { "column": "employment_rank" }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "kwargs": {
+        "column": "gdp_per_capita_yoy_pct",
+        "min_value": -50,
+        "max_value": 50,
+        "mostly": 0.95,
+        "_comment": "Year-over-year GDP swings beyond +/-50% would indicate a data quality issue."
+      }
+    }
+  ]
+}

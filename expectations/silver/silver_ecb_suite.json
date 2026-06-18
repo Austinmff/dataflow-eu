@@ -1,0 +1,36 @@
+{
+  "suite_name": "silver_ecb_suite",
+  "description": "Validates cleaned ECB data after deduplication and type casting.",
+  "table": "silver.silver_ecb",
+  "expectations": [
+    {
+      "expectation_type": "expect_table_row_count_to_be_between",
+      "kwargs": { "min_value": 1, "max_value": 50000 }
+    },
+    {
+      "expectation_type": "expect_compound_columns_to_be_unique",
+      "kwargs": { "column_list": ["series_key", "year", "month"] }
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": { "column": "value" }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_in_set",
+      "kwargs": {
+        "column": "series_label",
+        "value_set": ["eur_usd_rate", "ecb_mro_rate", "m3_money_supply"]
+      }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "kwargs": {
+        "column": "value",
+        "min_value": -5,
+        "max_value": 20000000,
+        "mostly": 0.99,
+        "_comment": "EUR/USD ~0.8-1.6, MRO rate -1 to 20%, M3 in EUR millions (large numbers)."
+      }
+    }
+  ]
+}

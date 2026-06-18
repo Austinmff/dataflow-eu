@@ -1,0 +1,46 @@
+{
+  "suite_name": "bronze_eurostat_suite",
+  "description": "Validates raw Eurostat data immediately after extraction, before any transformation.",
+  "table": "bronze.bronze_eurostat",
+  "expectations": [
+    {
+      "expectation_type": "expect_table_row_count_to_be_between",
+      "kwargs": { "min_value": 1, "max_value": 500000 }
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": { "column": "source" }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_in_set",
+      "kwargs": { "column": "source", "value_set": ["eurostat"] }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_in_set",
+      "kwargs": {
+        "column": "dataset",
+        "value_set": ["nama_10_pc", "une_rt_m", "prc_hicp_manr", "demo_pjan"]
+      }
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": { "column": "country_code" }
+    },
+    {
+      "expectation_type": "expect_column_value_lengths_to_be_between",
+      "kwargs": { "column": "country_code", "min_value": 2, "max_value": 12 }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "kwargs": { "column": "year", "min_value": 2019, "max_value": 2030 }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "kwargs": { "column": "month", "min_value": 1, "max_value": 12 }
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": { "column": "extracted_at" }
+    }
+  ]
+}
