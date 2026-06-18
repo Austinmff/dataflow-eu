@@ -1,0 +1,137 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  # =============================================================================
+  # Lint — ruff (Python) + sqlfluff (dbt SQL)
+  # =============================================================================
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt --break-system-packages
+
+      - name: Run ruff (lint)
+        run: ruff check .
+
+      - name: Run ruff (format check)
+        run: ruff format --check .
+
+      - name: Run sqlfluff
+        run: sqlfluff lint dbt/models/ --dialect postgres
+
+  # =============================================================================
+  # Unit tests — pytest with coverage gate
+  # =============================================================================
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt --break-system-packages
+
+      - name: Run pytest with coverage
+        run: |
+          pytest tests/unit/ -v \
+            --cov=extractors \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --cov-fail-under=80
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage.xml
+          retention-days: 14
+
+  # =============================================================================
+  # dbt — compile (catches Jinja/ref errors without needing a live warehouse)
+  # =============================================================================
+  dbt-compile:
+    name: dbt Compile
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      - name: Install dbt
+        run: pip install dbt-core==1.8.3 dbt-duckdb==1.8.1 --break-system-packages
+
+      - name: dbt deps
+        working-directory: dbt
+        run: dbt deps --profiles-dir .
+
+      - name: dbt parse (validates Jinja, refs, and YAML)
+        working-directory: dbt
+        env:
+          DBT_DUCKDB_PATH: "/tmp/ci_dataflow.duckdb"
+        run: dbt parse --profiles-dir . --target dev
+
+  # =============================================================================
+  # Docker build validation — ensures Compose stack builds cleanly
+  # =============================================================================
+  docker-build:
+    name: Docker Build Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create dummy .env for build validation
+        run: cp .env.example .env
+
+      - name: Validate Docker Compose config
+        run: docker compose config --quiet
+
+      - name: Build dashboard image
+        run: docker compose build dashboard
+
+  # =============================================================================
+  # Summary gate — required check for branch protection
+  # =============================================================================
+  ci-success:
+    name: CI Success
+    runs-on: ubuntu-latest
+    needs: [lint, test, dbt-compile, docker-build]
+    if: always()
+    steps:
+      - name: Check all jobs passed
+        run: |
+          if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" ]]; then
+            echo "One or more CI jobs failed."
+            exit 1
+          fi
+          echo "All CI checks passed."
