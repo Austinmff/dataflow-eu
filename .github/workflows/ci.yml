@@ -119,6 +119,7 @@ jobs:
       # Dashboard build will be enabled in Phase 6 once dashboard/Dockerfile exists
       # - name: Build dashboard image
       #   run: docker compose build dashboard
+      
   # =============================================================================
   # Summary gate — required check for branch protection
   # =============================================================================
