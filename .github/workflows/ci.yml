@@ -101,7 +101,7 @@ jobs:
           DBT_DUCKDB_PATH: "/tmp/ci_dataflow.duckdb"
         run: dbt parse --profiles-dir . --target dev
 
-  # =============================================================================
+# =============================================================================
   # Docker build validation — ensures Compose stack builds cleanly
   # =============================================================================
   docker-build:
@@ -116,9 +116,9 @@ jobs:
       - name: Validate Docker Compose config
         run: docker compose config --quiet
 
-      - name: Build dashboard image
-        run: docker compose build dashboard
-
+      # Dashboard build will be enabled in Phase 6 once dashboard/Dockerfile exists
+      # - name: Build dashboard image
+      #   run: docker compose build dashboard
   # =============================================================================
   # Summary gate — required check for branch protection
   # =============================================================================
