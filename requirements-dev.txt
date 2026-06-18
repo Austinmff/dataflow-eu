@@ -35,7 +35,7 @@ great-expectations==0.18.19
 
 # Streamlit
 streamlit==1.35.0
-plotly==5.22.0
+plotly==6.8.0
 
 # Utilities
 python-dotenv==1.0.1
