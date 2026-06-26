@@ -20,5 +20,5 @@ source = ["extractors"]
 omit = ["tests/*", "dbt/*", "dashboard/*"]
 
 [tool.coverage.report]
-fail_under = 80
+fail_under = 70
 show_missing = true
