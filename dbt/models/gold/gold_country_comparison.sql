@@ -1,3 +1,4 @@
+-- sqlfluff:templater:jinja:apply_dbt_builtins:true
 {{ config(materialized='table', tags=['gold','country_comparison']) }}
 with latest as (
     select *, row_number() over (partition by country_code order by year_month desc) as recency_rank

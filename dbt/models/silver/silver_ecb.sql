@@ -1,12 +1,18 @@
-{{ config(materialized='incremental', unique_key=['series_key','year','month'], on_schema_change='fail', tags=['silver','ecb']) }}
+{{ config(
+    materialized='incremental',
+    unique_key=['series_key','year','month'],
+    on_schema_change='fail',
+    tags=['silver','ecb']
+) }}
 with source as (
     select * from {{ ref('bronze_ecb') }}
     {% if is_incremental() %}
-    where year_month > (select coalesce(max(year_month), '2019-01') from {{ this }})
+        where year_month > (select coalesce(max(year_month), '2019-01') from {{ this }})
     {% endif %}
 ),
 labelled as (
-    select source, series_key, description, period,
+    select
+        source, series_key, description, period,
         cast(year as integer) as year, cast(month as integer) as month, year_month,
         cast(value as double precision) as value, trim(unit) as unit, extracted_at,
         case series_key
