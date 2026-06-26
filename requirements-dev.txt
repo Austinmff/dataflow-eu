@@ -4,7 +4,7 @@
 # =============================================================================
 
 # Linting & formatting
-ruff==0.4.10
+ruff==0.15.17
 sqlfluff==3.0.7
 sqlfluff-templater-dbt==3.0.7
 pre-commit==3.7.1
