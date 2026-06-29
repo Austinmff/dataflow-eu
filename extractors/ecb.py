@@ -105,11 +105,12 @@ class ECBExtractor(BaseExtractor):
         except requests.exceptions.ConnectionError as exc:
             raise ConnectionError(f"ECB API connection error for {series_key}") from exc
         except requests.exceptions.HTTPError as exc:
-            if response.status_code == 404:
+            status_code = exc.response.status_code if exc.response is not None else None
+            if status_code == 404:
                 # Series may not have data for this period — not an error
                 logger.warning("ecb_series_no_data", series=series_key, period=period)
                 return {}
-            raise ExtractionError(f"ECB API HTTP {response.status_code} for {series_key}") from exc
+            raise ExtractionError(f"ECB API HTTP {status_code} for {series_key}") from exc
 
         return response.json()
 

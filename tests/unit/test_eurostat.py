@@ -8,7 +8,7 @@ Uses responses/pytest-mock to mock the Eurostat HTTP API.
 from __future__ import annotations
 
 import json
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import boto3
 import pytest
@@ -124,6 +124,74 @@ class TestEurostatExtractorParsing:
         datasets_fetched = {r["dataset"] for r in records}
         assert "nama_10_pc" not in datasets_fetched
         assert "demo_pjan" not in datasets_fetched
+
+    def test_extract_calls_fetch_dataset_for_every_applicable_dataset(self):
+        """In January, all 4 datasets should be fetched; in other months, only 2."""
+        from extractors.eurostat import EurostatExtractor
+
+        extractor = EurostatExtractor()
+        with patch.object(
+            extractor, "_fetch_dataset", return_value=FAKE_EUROSTAT_RESPONSE
+        ) as mock_fetch:
+            extractor.extract(year=2023, month=1)
+
+        assert mock_fetch.call_count == 4
+
+        with patch.object(
+            extractor, "_fetch_dataset", return_value=FAKE_EUROSTAT_RESPONSE
+        ) as mock_fetch:
+            extractor.extract(year=2023, month=6)
+
+        assert mock_fetch.call_count == 2
+
+
+class TestEurostatExtractorHTTP:
+    def test_timeout_raises_timeout_error(self):
+        import requests
+
+        from extractors.eurostat import EurostatExtractor
+
+        extractor = EurostatExtractor()
+
+        with patch.object(
+            extractor.session,
+            "get",
+            side_effect=requests.exceptions.Timeout,
+        ):
+            with pytest.raises(TimeoutError):
+                extractor._fetch_dataset("une_rt_m", year=2023, month=3)
+
+    def test_connection_error_raises_connection_error(self):
+        import requests
+
+        from extractors.eurostat import EurostatExtractor
+
+        extractor = EurostatExtractor()
+
+        with patch.object(
+            extractor.session,
+            "get",
+            side_effect=requests.exceptions.ConnectionError,
+        ):
+            with pytest.raises(ConnectionError):
+                extractor._fetch_dataset("une_rt_m", year=2023, month=3)
+
+    def test_http_error_raises_extraction_error(self):
+        from extractors.base import ExtractionError
+        from extractors.eurostat import EurostatExtractor
+
+        extractor = EurostatExtractor()
+
+        mock_response = MagicMock()
+        mock_response.status_code = 500
+        mock_response.text = "Internal Server Error"
+        mock_response.raise_for_status.side_effect = __import__("requests").exceptions.HTTPError(
+            response=mock_response
+        )
+
+        with patch.object(extractor.session, "get", return_value=mock_response):
+            with pytest.raises(ExtractionError):
+                extractor._fetch_dataset("une_rt_m", year=2023, month=3)
 
 
 class TestEurostatExtractorS3:
