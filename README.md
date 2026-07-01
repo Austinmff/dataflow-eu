@@ -122,4 +122,152 @@ make stop
 
 ---
 
+
+
 ## Project Structure
+
+dataflow-eu/
+├── .github/workflows/       # GitHub Actions CI/CD
+├── dags/                    # Airflow DAG definitions
+│   ├── extraction_dag.py    # Ingest raw data from APIs → S3
+│   ├── transformation_dag.py # Trigger dbt Bronze/Silver/Gold runs
+│   └── quality_dag.py       # Run Great Expectations suites
+├── extractors/              # Python API clients (one module per source)
+│   ├── eurostat.py
+│   └── ecb.py
+├── dbt/                     # dbt project
+│   ├── models/
+│   │   ├── bronze/          # Source references (no transformation)
+│   │   ├── silver/          # Cleaned, typed, deduplicated
+│   │   └── gold/            # Business-ready aggregations & KPIs
+│   ├── tests/               # Custom dbt data tests
+│   └── macros/              # Reusable dbt macros
+├── expectations/            # Great Expectations suites per layer
+├── dashboard/               # Streamlit application
+├── docs/
+│   ├── adr/                 # Architecture Decision Records
+│   ├── dbt/                 # Generated dbt docs (static site)
+│   ├── data-quality/        # Generated GE HTML Data Docs
+│   └── runbook.md           # Operational runbook
+├── tests/
+│   ├── unit/                # pytest unit tests (mocked AWS)
+│   └── integration/         # pytest integration tests (live stack)
+├── scripts/                 # Init scripts for Docker services
+├── docker-compose.yml       # Full local stack definition
+├── Makefile                 # Developer commands (commands list below)
+├── pyproject.toml           # Python tooling config (ruff, pytest)
+└── .env.example             # Required environment variables template
+
+---
+
+## Data Sources
+
+| Source              | Datasets                                                                  | Update Frequency |
+|---------------------|---------------------------------------------------------------------------|------------------|
+| Eurostat REST API   | GDP per capita (`nama_10_pc`), Unemployment (`une_rt_m`), Inflation (`prc_hicp_manr`), Population (`demo_pjan`) | Monthly / Annual |
+| ECB Data Portal     | EUR exchange rates, Interest rates (MRO), M3 Money Supply                | Daily / Monthly  |
+
+All sources are publicly available, free to use, and require no API key.
+
+---
+
+## Pipeline Overview
+
+```mermaid
+flowchart TD
+    A["API Call with retry<br/>Exponential backoff, max 3x"] --> B["Schema validation<br/>JSON Schema per source"]
+    B --> C["Write to S3 Bronze<br/>source/year/month/data.json"]
+    C --> D["dbt Bronze models<br/>Source references only"]
+    D --> E["dbt Silver models<br/>Cast / Deduplicate / Normalize"]
+    E --> F["dbt Gold models<br/>Wide table / Time series / Country comparison"]
+    F --> G["Great Expectations<br/>Validate all three layers"]
+    G --> H["Streamlit Dashboard<br/>Charts + freshness indicator"]
+```
+
+---
+
+## Makefile Reference
+
+| Command           | Description                                              |
+|-------------------|----------------------------------------------------------|
+| `make setup`      | First-time setup: copy `.env`, generate keys, install deps |
+| `make run`        | Start Airflow + PostgreSQL + LocalStack                  |
+| `make dashboard`  | Start stack including Streamlit dashboard                |
+| `make stop`       | Stop all containers                                      |
+| `make restart`    | Full restart (stop + run)                                |
+| `make clean`      | Remove all containers and volumes ⚠️ deletes data        |
+| `make test`       | Run pytest + dbt test                                    |
+| `make test-unit`  | Run unit tests only                                      |
+| `make lint`       | Run ruff + sqlfluff + pre-commit                         |
+| `make format`     | Auto-format Python with ruff                             |
+| `make dbt-run`    | Execute all dbt models                                   |
+| `make dbt-test`   | Run all dbt tests                                        |
+| `make dbt-docs`   | Generate and serve dbt docs at localhost:8000            |
+| `make logs`       | Tail all service logs                                    |
+| `make s3-ls`      | List Bronze S3 bucket contents                           |
+| `make backfill`   | Manual Airflow backfill (set DAG, START, END)            |
+
+---
+
+## Development
+
+### Adding a new data source
+
+1. Create `extractors/<source_name>.py` implementing the `BaseExtractor` interface.
+2. Add the corresponding JSON Schema file at `extractors/schemas/<source_name>.json`.
+3. Create a Bronze dbt model at `dbt/models/bronze/bronze_<source_name>.sql`.
+4. Add Silver and Gold models as needed.
+5. Add a new expectation suite at `expectations/bronze/<source_name>_suite.json`.
+6. Register the extractor task in `dags/extraction_dag.py`.
+7. Write unit tests in `tests/unit/test_<source_name>.py`.
+
+### Running tests manually
+
+```bash
+# All tests
+make test
+
+# Unit only (no running Docker required)
+make test-unit
+
+# Integration only (requires make run first)
+make test-integration
+
+# Single test file
+pytest tests/unit/test_eurostat.py -v
+```
+
+### Backfilling historical data
+
+```bash
+make backfill DAG=extraction_pipeline START=2019-01-01 END=2024-12-31
+```
+
+---
+
+## Architecture Decisions
+
+| ADR                                                       | Decision                                              |
+|-----------------------------------------------------------|-------------------------------------------------------|
+| [ADR-001](docs/adr/ADR-001-warehouse-choice.md)           | DuckDB for local dev, PostgreSQL for production       |
+| [ADR-002](docs/adr/ADR-002-dbt-model-structure.md)        | Medallion (Bronze/Silver/Gold) over subject-area      |
+| [ADR-003](docs/adr/ADR-003-airflow-taskflow-api.md)       | TaskFlow API over classic Airflow operators           |
+| [ADR-004](docs/adr/ADR-004-dashboard-streamlit.md)        | Streamlit over Evidence.dev / Metabase / Looker Studio|
+
+## Operations
+
+- [**Runbook**](docs/runbook.md) — what to do when a pipeline fails, organized by symptom
+- [dbt docs](https://austinmff.github.io/dataflow-eu/) — auto-generated model lineage and column documentation (GitHub Pages)
+- [Data quality reports](docs/data-quality/index.html) — generated by `python scripts/run_quality_checks.py`
+
+## Testing & Quality
+
+- **93% test coverage** on extractors (`pytest tests/unit/ -v --cov=extractors`)
+- 28 Great Expectations checks across Bronze/Silver/Gold layers
+- CI runs lint (ruff + sqlfluff), unit tests, dbt compile, and Docker build on every push
+
+---
+
+## License
+
+MIT © 2026 Austin Manoel Farias Ferreira — [github.com/Austinmff](https://github.com/Austinmff)
