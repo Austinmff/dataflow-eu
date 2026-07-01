@@ -126,37 +126,38 @@ make stop
 
 ## Project Structure
 
+```text
 dataflow-eu/
-├── .github/workflows/       # GitHub Actions CI/CD
-├── dags/                    # Airflow DAG definitions
-│   ├── extraction_dag.py    # Ingest raw data from APIs → S3
+├── .github/workflows/        # GitHub Actions CI/CD
+├── dags/                     # Airflow DAG definitions
+│   ├── extraction_dag.py     # Ingest raw data from APIs → S3
 │   ├── transformation_dag.py # Trigger dbt Bronze/Silver/Gold runs
-│   └── quality_dag.py       # Run Great Expectations suites
-├── extractors/              # Python API clients (one module per source)
+│   └── quality_dag.py        # Run Great Expectations suites
+├── extractors/               # Python API clients (one module per source)
 │   ├── eurostat.py
 │   └── ecb.py
-├── dbt/                     # dbt project
+├── dbt/                      # dbt project
 │   ├── models/
-│   │   ├── bronze/          # Source references (no transformation)
-│   │   ├── silver/          # Cleaned, typed, deduplicated
-│   │   └── gold/            # Business-ready aggregations & KPIs
-│   ├── tests/               # Custom dbt data tests
-│   └── macros/              # Reusable dbt macros
-├── expectations/            # Great Expectations suites per layer
-├── dashboard/               # Streamlit application
+│   │   ├── bronze/           # Source references (no transformation)
+│   │   ├── silver/           # Cleaned, typed, deduplicated
+│   │   └── gold/             # Business-ready aggregations & KPIs
+│   ├── tests/                # Custom dbt data tests
+│   └── macros/               # Reusable dbt macros
+├── expectations/             # Great Expectations suites per layer
+├── dashboard/                # Streamlit application
 ├── docs/
-│   ├── adr/                 # Architecture Decision Records
-│   ├── dbt/                 # Generated dbt docs (static site)
-│   ├── data-quality/        # Generated GE HTML Data Docs
-│   └── runbook.md           # Operational runbook
+│   ├── adr/                  # Architecture Decision Records
+│   ├── dbt/                  # Generated dbt docs (static site)
+│   ├── data-quality/         # Generated GE HTML Data Docs
+│   └── runbook.md            # Operational runbook
 ├── tests/
-│   ├── unit/                # pytest unit tests (mocked AWS)
-│   └── integration/         # pytest integration tests (live stack)
-├── scripts/                 # Init scripts for Docker services
-├── docker-compose.yml       # Full local stack definition
-├── Makefile                 # Developer commands (commands list below)
-├── pyproject.toml           # Python tooling config (ruff, pytest)
-└── .env.example             # Required environment variables template
+│   ├── unit/                 # pytest unit tests (mocked AWS)
+│   └── integration/          # pytest integration tests (live stack)
+├── scripts/                  # Init scripts for Docker services
+├── docker-compose.yml        # Full local stack definition
+├── Makefile                  # Developer commands
+├── pyproject.toml            # Python tooling config (ruff, pytest)
+└── .env.example              # Required environment variables template
 
 ---
 
