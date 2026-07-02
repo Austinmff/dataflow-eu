@@ -3,7 +3,7 @@
 # One-command developer interface for the entire stack.
 # =============================================================================
 
-.PHONY: help setup run stop restart test lint dbt-run dbt-test dbt-docs clean fernet
+.PHONY: help setup run stop restart test lint dbt-run dbt-test dbt-docs clean fernet dashboard logs logs-airflow format
 
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
