@@ -20,6 +20,7 @@ x-airflow-common: &airflow-common
     - ./extractors:/opt/airflow/extractors
     - ./logs:/opt/airflow/logs
     - ./scripts:/opt/airflow/scripts
+    - ./dbt:/opt/airflow/dbt          
     - airflow-plugins:/opt/airflow/plugins
   depends_on:
     postgres:

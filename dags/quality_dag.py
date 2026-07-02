@@ -84,7 +84,7 @@ def _run_quality_checks(layer: str) -> dict:
     dag_id="quality_pipeline",
     description="Run Great Expectations suites against Bronze, Silver, and Gold layers",
     start_date=datetime(2019, 1, 1),
-    schedule_interval="0 9 1 * *",  # 1st of every month at 09:00 UTC
+    schedule_interval="0 6 1 * *",  # 1st of every month at 06:00 UTC
     catchup=True,
     max_active_runs=1,
     default_args=default_args,

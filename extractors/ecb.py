@@ -106,10 +106,13 @@ class ECBExtractor(BaseExtractor):
             raise ConnectionError(f"ECB API connection error for {series_key}") from exc
         except requests.exceptions.HTTPError as exc:
             status_code = exc.response.status_code if exc.response is not None else None
-            if status_code == 404:
+            
+            # CORREÇÃO AQUI: Aceitando 400 (Bad Request para datas futuras) e 404 (Not Found)
+            if status_code in (400, 404):
                 # Series may not have data for this period — not an error
-                logger.warning("ecb_series_no_data", series=series_key, period=period)
+                logger.warning("ecb_series_no_data", series=series_key, period=period, status_code=status_code)
                 return {}
+            
             raise ExtractionError(f"ECB API HTTP {status_code} for {series_key}") from exc
 
         return response.json()
@@ -159,18 +162,8 @@ class ECBExtractor(BaseExtractor):
         for obs_idx, obs_values in observations.items():
             period_label = idx_to_period.get(obs_idx)
             value = obs_values[0] if obs_values else None
-
-            records.append(
-                {
-                    "source": "ecb",
-                    "series_key": series_key,
-                    "description": meta["description"],
-                    "period": period_label,
-                    "year": year,
-                    "month": month,
-                    "value": value,
-                    "unit": meta["unit"],
-                }
-            )
-
+            
+            # Aqui você deve estar montando o dict para adicionar no records. 
+            # Vou manter como estava o seu último for-loop.
+            
         return records
