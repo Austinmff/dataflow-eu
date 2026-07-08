@@ -38,7 +38,7 @@ streamlit==1.35.0
 plotly==5.22.0
 
 # Utilities
-python-dotenv==1.0.1
+python-dotenv==1.2.2
 cryptography==42.0.8      # Fernet key generation
 tenacity==8.3.0           # Retry with exponential backoff
 structlog==24.2.0         # Structured JSON logging
