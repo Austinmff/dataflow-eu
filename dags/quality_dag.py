@@ -18,6 +18,7 @@ from datetime import datetime, timedelta
 
 from airflow.decorators import dag, task
 from airflow.sensors.external_task import ExternalTaskSensor
+from dags.dag_utils import check_execution_mode
 
 default_args = {
     "owner": "dataflow-eu",
@@ -52,7 +53,6 @@ def _slack_alert(context: dict) -> None:
 def _run_quality_checks(layer: str) -> dict:
     """Run the GE runner script for a given layer and parse the result."""
     import subprocess
-
     import structlog
 
     log = structlog.get_logger("quality_pipeline")
@@ -73,9 +73,12 @@ def _run_quality_checks(layer: str) -> dict:
         returncode=result.returncode,
         stdout_tail=result.stdout[-1000:],
     )
+    if result.stderr:
+        log.info("quality_check_stderr", layer=layer, stderr_tail=result.stderr[-1000:])
 
     if result.returncode != 0:
-        raise RuntimeError(f"Quality checks failed for layer={layer}:\n{result.stdout[-2000:]}")
+        error_output = result.stderr.strip() or result.stdout.strip() or "sem output capturado"
+        raise RuntimeError(f"Quality checks failed for layer={layer}:\n{error_output[-2000:]}")
 
     return {"layer": layer, "status": "passed"}
 
@@ -98,8 +101,8 @@ def quality_pipeline():
         external_task_id="summarize_transformation",
         allowed_states=["success"],
         failed_states=["failed", "upstream_failed"],
-        execution_delta=timedelta(hours=1),
-        timeout=3600,
+        execution_date_fn=check_execution_mode,
+        timeout=21600,
         poke_interval=60,
         mode="reschedule",
     )

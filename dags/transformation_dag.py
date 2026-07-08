@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from datetime import datetime, timedelta
 
+from dags.dag_utils import check_execution_mode
 from airflow.decorators import dag, task
 from airflow.sensors.external_task import ExternalTaskSensor
 
@@ -51,13 +52,6 @@ def _run_dbt(command: str, select: str | None = None) -> dict:
     log.info("dbt_command_succeeded", command=command, select=select)
     return {"command": command, "select": select, "status": "success"}
 
-# CORREÇÃO: Como os horários agora são iguais, o sensor deve olhar a mesma data!
-def check_execution_mode(logical_date, **context):
-    """
-    Check if the DAG was triggered manually or scheduled.
-    Como os horários foram alinhados para as 06:00, ambas usam o mesmo logical_date.
-    """
-    return logical_date
 
 @dag(
     dag_id="transformation_pipeline",
@@ -76,8 +70,8 @@ def transformation_pipeline():
         external_task_id="summarize_extraction",
         allowed_states=["success"],
         failed_states=["failed", "upstream_failed"],
-        execution_date_fn=check_execution_mode, # CORREÇÃO: Usa a função inteligente
-        timeout=3600,
+        execution_date_fn=check_execution_mode,
+        timeout=21600,   # ← antes: 3600. 6h de folga pra não travar em backfills longos
         poke_interval=60,
         mode="reschedule",
     )
@@ -108,12 +102,22 @@ def transformation_pipeline():
         structlog.get_logger("transformation_pipeline").info(
             "transformation_summary", bronze=bronze, silver=silver, gold=gold, tests=tests
         )
+
+    @task(task_id="load_bronze")
+    def load_bronze(logical_date=None, **context) -> dict:
+        from extractors.loader import load_partition
+        year, month = logical_date.year, logical_date.month
+        ecb = load_partition("ecb", year, month)
+        eurostat = load_partition("eurostat", year, month)
+        return {"ecb": ecb, "eurostat": eurostat}
+
+    load = load_bronze()
     deps = dbt_deps()
     bronze = dbt_run_bronze()
     silver = dbt_run_silver()
     gold = dbt_run_gold()
     tests = dbt_test_all()
     summary = summarize_transformation(bronze, silver, gold, tests)
-    wait_for_extraction >> bronze >> silver >> gold >> tests >> summary
+    wait_for_extraction >> load >> deps >> bronze >> silver >> gold >> tests >> summary
 
 transformation_pipeline()
